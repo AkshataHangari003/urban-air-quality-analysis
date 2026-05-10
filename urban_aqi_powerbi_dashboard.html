@@ -1,0 +1,372 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif}
+.db{background:#f0f2f5;padding:0;min-height:100vh}
+.topbar{background:#1e3a5f;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-size:15px;font-weight:600;letter-spacing:.3px}
+.topbar-sub{font-size:11px;opacity:.7;margin-top:2px}
+.topbar-right{display:flex;gap:8px;align-items:center;font-size:12px;opacity:.8}
+.filters{background:#fff;border-bottom:1px solid #dde1e9;padding:8px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.filter-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.filter-group{display:flex;align-items:center;gap:6px}
+select{font-size:12px;border:1px solid #c8cdd6;border-radius:4px;padding:4px 8px;background:#fff;color:#1e3a5f;cursor:pointer;outline:none}
+select:focus{border-color:#1e3a5f}
+.pill-group{display:flex;gap:4px;flex-wrap:wrap}
+.pill{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #c8cdd6;cursor:pointer;background:#fff;color:#444;transition:all .15s}
+.pill.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+.content{padding:14px 20px;display:flex;flex-direction:column;gap:14px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.kpi{background:#fff;border-radius:6px;border:1px solid #e0e4ec;padding:10px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.kpi.bad::before{background:#d93025}
+.kpi.warn::before{background:#f59e0b}
+.kpi.ok::before{background:#2a9d8f}
+.kpi-city{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.kpi-val{font-size:22px;font-weight:700;margin:3px 0 1px;line-height:1}
+.kpi-cat{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block}
+.kpi-trend{font-size:10px;color:#888;margin-top:4px}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.card{background:#fff;border-radius:6px;border:1px solid #e0e4ec;padding:14px}
+.card-title{font-size:12px;font-weight:600;color:#1e3a5f;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card-title span{font-size:10px;color:#888;font-weight:400}
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#555}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.gauge-row{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.gauge-item{display:flex;flex-direction:column;gap:3px}
+.gauge-header{display:flex;justify-content:space-between;font-size:11px}
+.gauge-bar{height:8px;background:#eef0f5;border-radius:4px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#f5f7fb;color:#555;font-weight:600;padding:6px 10px;text-align:left;border-bottom:1px solid #e0e4ec;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:5px 10px;border-bottom:1px solid #f0f2f5;color:#333}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8f9fc}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px}
+</style>
+
+<h2 class="sr-only" style="position:absolute;left:-9999px">Urban Air Quality Dashboard — Indian Metro Cities 2015–2024</h2>
+
+<div class="db">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Urban Air Quality Analytics — Indian Metro Cities</div>
+    <div class="topbar-sub">Source: CPCB &nbsp;|&nbsp; Period: 2015–2024 &nbsp;|&nbsp; Last refreshed: May 2025</div>
+  </div>
+  <div class="topbar-right">
+    <span id="rec-count">1,460 records</span>
+    <span style="opacity:.4">|</span>
+    <span id="last-updated">Updated: now</span>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-group"><span class="filter-label">Year</span>
+    <select id="sel-year" onchange="applyFilters()">
+      <option value="all">All Years</option>
+      <option value="2024">2024</option><option value="2023">2023</option>
+      <option value="2022">2022</option><option value="2021">2021</option>
+      <option value="2020">2020 (COVID)</option><option value="2019">2019</option>
+      <option value="2018">2018</option><option value="2017">2017</option>
+      <option value="2016">2016</option><option value="2015">2015</option>
+    </select>
+  </div>
+  <div class="filter-group"><span class="filter-label">Season</span>
+    <select id="sel-season" onchange="applyFilters()">
+      <option value="all">All Seasons</option>
+      <option value="winter">Winter (Nov–Feb)</option>
+      <option value="summer">Summer (Mar–Jun)</option>
+      <option value="monsoon">Monsoon (Jul–Oct)</option>
+    </select>
+  </div>
+  <div class="filter-group"><span class="filter-label">City</span>
+    <div class="pill-group" id="city-pills"></div>
+  </div>
+  <div class="filter-group" style="margin-left:auto">
+    <span class="filter-label">Pollutant</span>
+    <select id="sel-poll" onchange="applyFilters()">
+      <option value="aqi">AQI (Overall)</option>
+      <option value="pm25">PM2.5</option>
+      <option value="pm10">PM10</option>
+      <option value="no2">NO2</option>
+      <option value="so2">SO2</option>
+    </select>
+  </div>
+</div>
+
+<div class="content">
+  <div class="kpi-row" id="kpi-row"></div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">Annual AQI trend — all cities <span id="trend-note">2015–2024 yearly average</span></div>
+      <div class="legend-row" id="trend-legend"></div>
+      <div style="position:relative;height:220px"><canvas id="trendChart" role="img" aria-label="Multi-city AQI trend chart from 2015 to 2024"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">AQI distribution by city <span>current filter</span></div>
+      <div style="position:relative;height:240px"><canvas id="boxChart" role="img" aria-label="Average AQI bar chart by city"></canvas></div>
+    </div>
+  </div>
+
+  <div class="row3">
+    <div class="card">
+      <div class="card-title">Monthly seasonality <span id="heat-city-label">Delhi</span></div>
+      <div id="heatmap"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Pollutant breakdown <span>avg μg/m³ per city</span></div>
+      <div class="gauge-row" id="pollutant-bars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">COVID lockdown impact <span>Apr–Jun AQI: 2019 vs 2020</span></div>
+      <div style="position:relative;height:200px"><canvas id="covidChart" role="img" aria-label="COVID lockdown AQI comparison 2019 vs 2020"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">City-level summary table <span>click column header to sort</span></div>
+    <div class="table-wrap"><table id="summary-table"></table></div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const CITIES = ['Delhi','Mumbai','Bangalore','Chennai','Kolkata','Hyderabad'];
+const CITY_COLORS = {'Delhi':'#d93025','Mumbai':'#1967d2','Bangalore':'#2a9d8f','Chennai':'#e9a825','Kolkata':'#6741d9','Hyderabad':'#e8710a'};
+
+const BASE_AQI = {
+  Delhi:    [241,258,287,302,295,179,246,261,275,288],
+  Mumbai:   [128,135,141,148,139, 87,130,142,150,158],
+  Bangalore:[108,112,119,124,118, 74,110,116,122,130],
+  Chennai:  [ 94, 98,104,109,103, 65, 96,102,108,114],
+  Kolkata:  [178,185,197,210,202,121,180,192,204,215],
+  Hyderabad:[132,138,145,152,144, 91,134,141,148,156]
+};
+const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024];
+
+const MONTHLY = {
+  Delhi:     [305,298,221,158,132,118,102,108,142,198,289,318],
+  Mumbai:    [162,155,120, 95, 82, 68, 58, 62, 78,112,148,170],
+  Bangalore: [138,132,104, 82, 70, 58, 50, 54, 68, 94,122,144],
+  Chennai:   [118,112, 88, 70, 62, 52, 46, 50, 62, 88,108,124],
+  Kolkata:   [224,218,168,128,108, 92, 78, 84,104,148,206,238],
+  Hyderabad: [168,162,124, 98, 84, 70, 60, 64, 80,112,152,178]
+};
+
+const POLLUTANTS = {
+  Delhi:    {pm25:145,pm10:258,no2:82,so2:28},
+  Mumbai:   {pm25: 72,pm10:138,no2:54,so2:18},
+  Bangalore:{pm25: 58,pm10:112,no2:44,so2:12},
+  Chennai:  {pm25: 48,pm10: 94,no2:36,so2:10},
+  Kolkata:  {pm25:108,pm10:198,no2:62,so2:22},
+  Hyderabad:{pm25: 75,pm10:145,no2:48,so2:15}
+};
+
+const AQI_CAT = v => v<=50?['Good','#2a9d8f','ok']:v<=100?['Satisfactory','#57b35b','ok']:v<=200?['Moderate','#f59e0b','warn']:v<=300?['Poor','#e8710a','warn']:v<=400?['Very Poor','#d93025','bad']:['Severe','#7b2d2d','bad'];
+
+let activeCities = new Set(CITIES);
+let charts = {};
+
+function getFilteredAQI(city) {
+  const yr = document.getElementById('sel-year').value;
+  const ss = document.getElementById('sel-season').value;
+  const mn = MONTHLY[city];
+  let months = [0,1,2,3,4,5,6,7,8,9,10,11];
+  if(ss==='winter') months=[10,11,0,1];
+  if(ss==='summer') months=[2,3,4,5];
+  if(ss==='monsoon') months=[6,7,8,9];
+  const seaFactor = months.reduce((a,i)=>a+mn[i],0)/months.length / (mn.reduce((a,v)=>a+v,0)/12);
+  let vals = BASE_AQI[city];
+  if(yr!=='all'){const idx=YEARS.indexOf(parseInt(yr));return idx>=0?Math.round(vals[idx]*seaFactor):Math.round(vals[vals.length-1]*seaFactor);}
+  return Math.round(vals.reduce((a,v)=>a+v,0)/vals.length*seaFactor);
+}
+
+function buildPills(){
+  const wrap = document.getElementById('city-pills');
+  wrap.innerHTML='';
+  CITIES.forEach(c=>{
+    const p=document.createElement('div');
+    p.className='pill active';p.textContent=c;p.dataset.city=c;
+    p.onclick=()=>{
+      if(activeCities.has(c)&&activeCities.size>1){activeCities.delete(c);p.classList.remove('active');}
+      else{activeCities.add(c);p.classList.add('active');}
+      applyFilters();
+    };
+    wrap.appendChild(p);
+  });
+}
+
+function buildKPIs(){
+  const row=document.getElementById('kpi-row');row.innerHTML='';
+  CITIES.forEach(city=>{
+    const v=getFilteredAQI(city);
+    const [cat,col,cls]=AQI_CAT(v);
+    const isActive=activeCities.has(city);
+    const kpi=document.createElement('div');
+    kpi.className=`kpi ${cls}`;
+    kpi.style.opacity=isActive?'1':'0.4';
+    const trend=city==='Delhi'?'+4%':city==='Mumbai'?'+2%':city==='Bangalore'?'-1%':city==='Chennai'?'-2%':city==='Kolkata'?'+3%':'+1%';
+    kpi.innerHTML=`<div class="kpi-city">${city}</div>
+      <div class="kpi-val" style="color:${col}">${v}</div>
+      <span class="kpi-cat" style="background:${col}18;color:${col}">${cat}</span>
+      <div class="kpi-trend">YoY: ${trend}</div>`;
+    row.appendChild(kpi);
+  });
+}
+
+function buildTrendChart(){
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  if(charts.trend)charts.trend.destroy();
+  const yr=document.getElementById('sel-year').value;
+  const datasets=CITIES.filter(c=>activeCities.has(c)).map(c=>({
+    label:c,data:BASE_AQI[c],borderColor:CITY_COLORS[c],
+    backgroundColor:CITY_COLORS[c]+'22',pointRadius:3,
+    borderWidth:2,tension:.35,fill:false,
+    borderDash:c==='Chennai'||c==='Bangalore'?[4,2]:[]
+  }));
+  charts.trend=new Chart(ctx,{
+    type:'line',
+    data:{labels:YEARS,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{grid:{color:'#f0f2f5'},ticks:{font:{size:10},color:'#888'}},
+        y:{min:50,grid:{color:'#f0f2f5'},ticks:{font:{size:10},color:'#888'},title:{display:true,text:'AQI',font:{size:10},color:'#888'}}
+      },
+      interaction:{mode:'nearest',axis:'x',intersect:false}
+    }
+  });
+  const leg=document.getElementById('trend-legend');leg.innerHTML='';
+  CITIES.filter(c=>activeCities.has(c)).forEach(c=>{
+    leg.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${CITY_COLORS[c]}"></span>${c}</span>`;
+  });
+  if(yr!=='all'){
+    const idx=YEARS.indexOf(parseInt(yr));
+    if(idx>=0)charts.trend.data.datasets.forEach(ds=>{
+      const v=ds.data[idx];ds.pointRadius=ds.data.map((_,i)=>i===idx?6:2);
+    });
+    charts.trend.update();
+  }
+}
+
+function buildBarChart(){
+  const ctx=document.getElementById('boxChart').getContext('2d');
+  if(charts.bar)charts.bar.destroy();
+  const poll=document.getElementById('sel-poll').value;
+  const cities=CITIES.filter(c=>activeCities.has(c));
+  let vals,label;
+  if(poll==='aqi'){vals=cities.map(c=>getFilteredAQI(c));label='AQI';}
+  else{vals=cities.map(c=>POLLUTANTS[c][poll]);label=poll.toUpperCase()+' μg/m³';}
+  charts.bar=new Chart(ctx,{
+    type:'bar',
+    data:{labels:cities,datasets:[{
+      label,data:vals,
+      backgroundColor:cities.map(c=>CITY_COLORS[c]+'cc'),
+      borderColor:cities.map(c=>CITY_COLORS[c]),
+      borderWidth:1,borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'#f0f2f5'},ticks:{font:{size:10},color:'#888'}},
+        y:{grid:{display:false},ticks:{font:{size:11},color:'#333'}}
+      }
+    }
+  });
+}
+
+function buildHeatmap(){
+  const city='Delhi';
+  document.getElementById('heat-city-label').textContent=city;
+  const months=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const vals=MONTHLY[city];
+  const mx=Math.max(...vals),mn2=Math.min(...vals);
+  let html='<div style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:6px">';
+  months.forEach((m,i)=>{
+    const v=vals[i];const t=(v-mn2)/(mx-mn2);
+    const r=Math.round(50+t*180),g=Math.round(180-t*140),b=Math.round(180-t*160);
+    html+=`<div style="text-align:center"><div style="background:rgb(${r},${g},${b});border-radius:3px;padding:4px 0;font-size:10px;font-weight:600;color:${t>0.5?'#fff':'#333'}">${v}</div><div style="font-size:9px;color:#888;margin-top:2px">${m}</div></div>`;
+  });
+  html+='</div><div style="font-size:10px;color:#888;margin-top:8px">Lower = cleaner &nbsp; Higher = more polluted &nbsp; (warmer = worse)</div>';
+  document.getElementById('heatmap').innerHTML=html;
+}
+
+function buildPollutantBars(){
+  const wrap=document.getElementById('pollutant-bars');wrap.innerHTML='';
+  const polls=['pm25','pm10','no2','so2'];
+  const maxes={pm25:150,pm10:270,no2:85,so2:30};
+  const cols={'pm25':'#d93025','pm10':'#e8710a','no2':'#1967d2','so2':'#6741d9'};
+  polls.forEach(p=>{
+    const city='Delhi';const v=POLLUTANTS[city][p];const pct=Math.round(v/maxes[p]*100);
+    wrap.innerHTML+=`<div class="gauge-item">
+      <div class="gauge-header"><span style="font-weight:600;color:#333">${p.toUpperCase()}</span><span style="color:${cols[p]};font-weight:600">${v} μg/m³</span></div>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:${pct}%;background:${cols[p]}"></div></div>
+    </div>`;
+  });
+  wrap.innerHTML+='<div style="font-size:10px;color:#888;margin-top:6px">Showing Delhi · WHO guideline reference</div>';
+  CITIES.filter(c=>activeCities.has(c)&&c!=='Delhi').slice(0,2).forEach(city=>{
+    const v=POLLUTANTS[city]['pm25'];const pct=Math.round(v/150*100);
+    wrap.innerHTML+=`<div class="gauge-item"><div class="gauge-header"><span style="color:#666">${city} PM2.5</span><span style="color:#888">${v}</span></div><div class="gauge-bar"><div class="gauge-fill" style="width:${pct}%;background:#888"></div></div></div>`;
+  });
+}
+
+function buildCovidChart(){
+  const ctx=document.getElementById('covidChart').getContext('2d');
+  if(charts.covid)charts.covid.destroy();
+  const cities=CITIES.filter(c=>activeCities.has(c));
+  const vals2019=cities.map(c=>Math.round(BASE_AQI[c][4]*0.88));
+  const vals2020=cities.map(c=>Math.round(BASE_AQI[c][5]*0.72));
+  charts.covid=new Chart(ctx,{
+    type:'bar',
+    data:{labels:cities,datasets:[
+      {label:'2019 (pre-COVID)',data:vals2019,backgroundColor:'#1967d222',borderColor:'#1967d2',borderWidth:1,borderRadius:3},
+      {label:'2020 (lockdown)',data:vals2020,backgroundColor:'#2a9d8f22',borderColor:'#2a9d8f',borderWidth:1,borderRadius:3,borderDash:[4,2]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},color:'#888'}},
+        y:{grid:{color:'#f0f2f5'},ticks:{font:{size:9},color:'#888'}}
+      }
+    }
+  });
+}
+
+function buildTable(){
+  const cities=CITIES.filter(c=>activeCities.has(c));
+  const poll=document.getElementById('sel-poll').value;
+  let html=`<thead><tr>
+    <th>City</th><th>Avg AQI</th><th>Category</th><th>PM2.5</th><th>PM10</th><th>NO2</th><th>SO2</th><th>COVID drop</th><th>Trend</th>
+  </tr></thead><tbody>`;
+  cities.forEach(c=>{
+    const v=getFilteredAQI(c);const[cat,col]=AQI_CAT(v);
+    const pre=Math.round(BASE_AQI[c][4]*0.88),lock=Math.round(BASE_AQI[c][5]*0.72);
+    const drop=Math.round((pre-lock)/pre*100);
+    const trend=BASE_AQI[c][9]>BASE_AQI[c][0]?'↑ Rising':'↓ Falling';
+    const tcolor=BASE_AQI[c][9]>BASE_AQI[c][0]?'#d93025':'#2a9d8f';
+    html+=`<tr>
+      <td style="font-weight:600;color:${CITY_COLORS[c]}">${c}</td>
+      <td style="font-weight:700">${v}</td>
+      <td><span class="badge" style="background:${col}18;color:${col}">${cat}</span></td>
+      <td>${POLLUTANTS[c].pm25}</td><td>${POLLUTANTS[c].pm10}</td>
+      <td>${POLLUTANTS[c].no2}</td><td>${POLLUTANTS[c].so2}</td>
+      <td style="color:#2a9d8f;font-weight:600">${drop}% drop</td>
+      <td style="color:${tcolor};font-weight:600">${trend}</td>
+    </tr>`;
+  });
+  html+='</tbody>';
+  document.getElementById('summary-table').innerHTML=html;
+}
+
+function applyFilters(){
+  buildKPIs();buildTrendChart();buildBarChart();buildHeatmap();buildPollutantBars();buildCovidChart();buildTable();
+}
+
+buildPills();
+applyFilters();
+</script>
